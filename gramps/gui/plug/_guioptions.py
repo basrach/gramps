@@ -1238,46 +1238,48 @@ class GuiPersonListOption(Gtk.Box):
             tree_iter = self.__model.iter_next(tree_iter)
 
         select_class = SelectorFactory("Person")
-        sel = select_class(self.__dbstate, self.__uistate, self.__track, skip=skip_list)
-        person = sel.run()
-        if person:
-            name = _nd.display(person)
-            gid = person.get_gramps_id()
-            self.__model.append([name, gid])
+        sel = select_class(self.__dbstate, self.__uistate, self.__track, skip=skip_list, allow_multiple_selection=True)
+        persons = sel.run()
+        if persons:
+            for person in persons:
+                if person:
+                    name = _nd.display(person)
+                    gid = person.get_gramps_id()
+                    self.__model.append([name, gid])
 
-            # if this person has a spouse, ask if we should include the spouse
-            # in the list of "people of interest"
-            #
-            # NOTE: we may want to make this an optional thing, determined
-            # by the use of a parameter at the time this class is instatiated
-            family_list = person.get_family_handle_list()
-            for family_handle in family_list:
-                family = self.__db.get_family_from_handle(family_handle)
+                    # if this person has a spouse, ask if we should include the spouse
+                    # in the list of "people of interest"
+                    #
+                    # NOTE: we may want to make this an optional thing, determined
+                    # by the use of a parameter at the time this class is instatiated
+                    family_list = person.get_family_handle_list()
+                    for family_handle in family_list:
+                        family = self.__db.get_family_from_handle(family_handle)
 
-                if person.get_handle() == family.get_father_handle():
-                    spouse_handle = family.get_mother_handle()
-                else:
-                    spouse_handle = family.get_father_handle()
+                        if person.get_handle() == family.get_father_handle():
+                            spouse_handle = family.get_mother_handle()
+                        else:
+                            spouse_handle = family.get_father_handle()
 
-                if spouse_handle and (spouse_handle not in skip_list):
-                    spouse = self.__db.get_person_from_handle(spouse_handle)
-                    spouse_name = _nd.display(spouse)
-                    text = _("Also include %s?") % spouse_name
+                        if spouse_handle and (spouse_handle not in skip_list):
+                            spouse = self.__db.get_person_from_handle(spouse_handle)
+                            spouse_name = _nd.display(spouse)
+                            text = _("Also include %s?") % spouse_name
 
-                    prompt = OptionDialog(
-                        _("Select Person"),
-                        text,
-                        _("No"),
-                        None,
-                        _("Yes"),
-                        None,
-                        parent=self.__uistate.window,
-                    )
-                    if prompt.get_response() == Gtk.ResponseType.YES:
-                        gid = spouse.get_gramps_id()
-                        self.__model.append([spouse_name, gid])
+                            prompt = OptionDialog(
+                                _("Select Person"),
+                                text,
+                                _("No"),
+                                None,
+                                _("Yes"),
+                                None,
+                                parent=self.__uistate.window,
+                            )
+                            if prompt.get_response() == Gtk.ResponseType.YES:
+                                gid = spouse.get_gramps_id()
+                                self.__model.append([spouse_name, gid])
 
-            self.__update_value()
+                    self.__update_value()
 
     def __del_person_clicked(self, obj):  # IGNORE:W0613 - obj is unused
         """
